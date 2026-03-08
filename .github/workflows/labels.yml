@@ -1,0 +1,23 @@
+name: Sync Labels
+on:
+  push:
+    paths:
+      - ".github/labels.yml"
+    branches:
+      - main
+  workflow_dispatch: # allow manually trigger
+
+permissions:
+  contents: read
+  issues: write # need permission to update labels
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: endbug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          delete-other-labels: true

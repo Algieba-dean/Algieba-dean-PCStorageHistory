@@ -1,0 +1,24 @@
+version: 2
+updates:
+  # Maintain GitHub Actions versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # Maintain Python dependencies (pip)
+  # Note: Dependabot support for 'uv' is experimental/limited,
+  # but scanning pyproject.toml usually works.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Group updates to reduce PR noise
+    groups:
+      dependencies:
+        patterns:
+          - "*"

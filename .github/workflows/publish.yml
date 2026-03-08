@@ -1,0 +1,37 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  # important: it's for OICD password-free release
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+
+    # release can't be draft
+    if: github.event.release.draft == false
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build package
+        run: |
+          uv build
+
+      # PS: should configure "Trusted Publishing" bin this repo  on PyPI's
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

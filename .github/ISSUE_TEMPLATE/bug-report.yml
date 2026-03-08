@@ -1,0 +1,89 @@
+name: Bug Report
+description: Create a report to help us improve the project
+title: "[Bug]: "
+labels: ["kind/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        Please verify that your issue is not already reported in the [Issues](../../issues) section.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: I tried to run the environment but it crashed with an IndexError...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: The card should be flipped successfully without errors.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Please verify that the issue is reproducible with the latest version.
+      placeholder: |
+        1. Initialize Env
+        2. Call step() with action X
+        3. Error occurs
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      # [修正点 3] 去掉 OinkGameRL，改为通用名称
+      label: Project Version
+      description: Which version are you using? (e.g., v0.1.0 or main branch commit hash)
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      options:
+        - "3.12"
+        - "3.13"
+        - "Other (please specify in logs)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct & Duplicates
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
+        - label: I have searched the existing issues and this is not a duplicate
+          required: true

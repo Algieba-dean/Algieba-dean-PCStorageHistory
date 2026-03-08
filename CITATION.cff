@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+    - family-names: "King"
+      given-names: "Algieba"
+title: "my_package"
+version: 0.1.0
+date-released: 2025-12-12
+url: "https://github.com/Algieba-dean/my_package"

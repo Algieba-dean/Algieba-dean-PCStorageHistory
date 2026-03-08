@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  schedule:
+    - cron: "0 0 * * *"
+
+# 1. Save resources: Automatically cancel old CI runs on new commits
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# -------------------------------------------------------------------
+# 2. Security: Limit GITHUB_TOKEN permissions (Industrial Practice)
+# "contents: read" is required for actions/checkout.
+# All other permissions are set to "none" by default when this block exists.
+# -------------------------------------------------------------------
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Code Quality & Safety
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        # Ensure pre-commit package is installed via dev dependencies
+        run: uv sync --all-extras --dev
+
+      # -------------------------------------------------------
+      # Critical Step: Cache Pre-commit environment
+      # -------------------------------------------------------
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      # -------------------------------------------------------
+      # Critical Step: Run Pre-commit
+      # -------------------------------------------------------
+      - name: Run pre-commit
+        run: |
+          uv run pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: no-commit-to-branch
+
+  tests:
+    name: Test (Py${{ matrix.python-version }} on ${{ matrix.os }})
+    needs: quality # Run tests only after code quality checks pass
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3. Matrix Testing: Ensure compatibility across OS and Python versions
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pytest
+        # 4. Generate Coverage Reports (XML & HTML)
+        run: uv run pytest --cov --cov-report=xml --cov-report=html
+
+      # 5. Upload Coverage to Codev
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+      # 6. Upload Coverage HTML Report
+      - name: Upload Coverage HTML Report
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          # Add matrix name to prevent overwriting artifacts from different jobs
+          name: coverage-html-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: htmlcov/
+          retention-days: 7
