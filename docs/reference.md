@@ -1,3 +1,3 @@
 # API Reference
 
-::: my_package.main
+::: pc_storage_history.main

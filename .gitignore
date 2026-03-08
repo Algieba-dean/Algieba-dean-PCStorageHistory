@@ -43,3 +43,7 @@ htmlcov/
 .env
 .env.*
 !.env.example
+
+# Application data
+storage_history.db
+*.db

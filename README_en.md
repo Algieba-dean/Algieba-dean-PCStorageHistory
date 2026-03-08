@@ -3,7 +3,7 @@
 [![中文说明](https://img.shields.io/badge/docs-中文版-F06060)](README.md)
 
 ![Python](https://img.shields.io/badge/python-3.12+-blue.svg)
-![Build](https://img.shields.io/github/actions/workflow/status/Algieba-dean/modern-python-template/ci.yml?label=CI)
+![Build](https://img.shields.io/github/actions/workflow/status/Algieba-Dean/modern-python-template/ci.yml?label=CI)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg)
 ![Type Checker](https://img.shields.io/badge/type%20checker-mypy-blue)
@@ -35,7 +35,7 @@ We provide a script to automate the renaming and configuration process.
 
 2.  **What the script does for you**:
 
-    - Renames the source directory (`src/my_package` -> `src/your_pkg`).
+    - Renames the source directory (`src/pc_storage_history` -> `src/your_pkg`).
     - Updates `pyproject.toml`, `mkdocs.yml`, `Dockerfile`, and GitHub templates.
     - Replaces author emails in `SECURITY.md` and `CODE_OF_CONDUCT.md`.
     - Updates citations and documentation references.
@@ -160,7 +160,7 @@ We use `uv run` to execute commands within the virtual environment.
 .
 ├── .github/                # GitHub Actions, Templates, Labels
 ├── src/
-│   └── my_package/         # Source code (Automatic renamed by init script)
+│   └── pc_storage_history/         # Source code (Automatic renamed by init script)
 ├── tests/                  # Test suite
 ├── pyproject.toml          # Project configuration (Ruff, Mypy, Pytest)
 ├── .pre-commit-config.yaml # Pre-commit 钩子配置
@@ -175,13 +175,13 @@ This project includes a multi-stage `Dockerfile` optimized for size and security
 ### Build the Image
 
 ```bash
-docker build -t my_package_image .
+docker build -t pc_storage_history_image .
 ```
 
 ### Run the Container
 
 ```bash
-docker run --rm my_package_image
+docker run --rm pc_storage_history_image
 ```
 
 ## Contributing

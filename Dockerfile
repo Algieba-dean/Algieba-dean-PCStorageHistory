@@ -32,4 +32,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY src ./src
 
-CMD ["python", "-m", "my_package"]
+CMD ["python", "-m", "pc_storage_history"]

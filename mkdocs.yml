@@ -1,9 +1,9 @@
-site_name: my_package
+site_name: pc_storage_history
 site_description: A modern Python project.
 site_url: https://example.com/
 
 repo_name: GitHub
-repo_url: https://github.com/Algieba-dean/my_package
+repo_url: https://github.com/Algieba-Dean/pc_storage_history
 
 theme:
   name: material
