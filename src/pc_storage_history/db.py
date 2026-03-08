@@ -141,6 +141,52 @@ class StorageDatabase:
             )
         return result
 
+    def compare_scans(
+        self, old_scan_id: int, new_scan_id: int
+    ) -> dict[str, list[dict[str, Any]]]:
+        """
+        Compare two scans and return added, removed, and changed files.
+
+        Returns a dict with keys:
+        - "added": files present in new but not in old
+        - "removed": files present in old but not in new
+        - "changed": files present in both but with different size
+        """
+        cursor = self.conn.cursor()
+
+        # Get all non-directory nodes for both scans, keyed by path
+        def get_file_map(scan_id: int) -> dict[str, int]:
+            cursor.execute(
+                "SELECT path, size FROM nodes WHERE scan_id = ? AND is_dir = 0",
+                (scan_id,),
+            )
+            return {row[0]: row[1] for row in cursor.fetchall()}
+
+        old_files = get_file_map(old_scan_id)
+        new_files = get_file_map(new_scan_id)
+
+        old_paths = set(old_files.keys())
+        new_paths = set(new_files.keys())
+
+        added = [
+            {"path": p, "size": new_files[p]} for p in sorted(new_paths - old_paths)
+        ]
+        removed = [
+            {"path": p, "size": old_files[p]} for p in sorted(old_paths - new_paths)
+        ]
+        changed = [
+            {
+                "path": p,
+                "old_size": old_files[p],
+                "new_size": new_files[p],
+                "diff": new_files[p] - old_files[p],
+            }
+            for p in sorted(old_paths & new_paths)
+            if old_files[p] != new_files[p]
+        ]
+
+        return {"added": added, "removed": removed, "changed": changed}
+
     def close(self) -> None:
         """Close the database connection."""
         self.conn.close()
