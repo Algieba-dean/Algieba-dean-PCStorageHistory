@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QDialog,
     QFileDialog,
     QHBoxLayout,
@@ -19,6 +20,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -28,6 +32,7 @@ from pc_storage_history.analysis import Analyzer, DirStat
 from pc_storage_history.db import StorageDatabase
 from pc_storage_history.gui_model import StorageTreeModel, format_size
 from pc_storage_history.scanner import FastScanner
+from pc_storage_history.treemap import TreemapWidget
 
 
 class HistoryDialog(QDialog):
@@ -80,6 +85,88 @@ class HistoryDialog(QDialog):
         if current_item:
             self.selected_scan_id = current_item.data(Qt.ItemDataRole.UserRole)
             self.accept()
+
+
+class DiffDialog(QDialog):
+    """Dialog to compare two scan snapshots."""
+
+    def __init__(self, db: StorageDatabase, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Compare Scans")
+        self.resize(800, 600)
+        self.db = db
+        self.setup_ui()
+
+    def setup_ui(self) -> None:
+        layout = QVBoxLayout(self)
+
+        # Scan selectors
+        selector_layout = QHBoxLayout()
+        selector_layout.addWidget(QLabel("Old Scan:"))
+        self.combo_old = QComboBox()
+        selector_layout.addWidget(self.combo_old)
+        selector_layout.addWidget(QLabel("New Scan:"))
+        self.combo_new = QComboBox()
+        selector_layout.addWidget(self.combo_new)
+        self.btn_compare = QPushButton("Compare")
+        self.btn_compare.clicked.connect(self.on_compare)
+        selector_layout.addWidget(self.btn_compare)
+        layout.addLayout(selector_layout)
+
+        # Results table
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Status", "Path", "Old Size", "New Size"])
+        header = self.table.horizontalHeader()
+        if header:
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(self.table)
+
+        self._load_scans()
+
+    def _load_scans(self) -> None:
+        scans = self.db.get_all_scans()
+        for scan in scans:
+            label = f"#{scan['id']} {scan['timestamp']} - {scan['root_path']}"
+            self.combo_old.addItem(label, scan["id"])
+            self.combo_new.addItem(label, scan["id"])
+        if self.combo_new.count() > 1:
+            self.combo_new.setCurrentIndex(0)
+            self.combo_old.setCurrentIndex(1)
+
+    def on_compare(self) -> None:
+        old_id = self.combo_old.currentData()
+        new_id = self.combo_new.currentData()
+        if old_id is None or new_id is None:
+            return
+
+        diff = self.db.compare_scans(old_id, new_id)
+        rows = []
+        for item in diff["added"]:
+            rows.append(("+ Added", item["path"], "", format_size(item["size"])))
+        for item in diff["removed"]:
+            rows.append(("- Removed", item["path"], format_size(item["size"]), ""))
+        for item in diff["changed"]:
+            rows.append(
+                (
+                    "~ Changed",
+                    item["path"],
+                    format_size(item["old_size"]),
+                    format_size(item["new_size"]),
+                )
+            )
+
+        self.table.setRowCount(len(rows))
+        for i, (status, path, old_sz, new_sz) in enumerate(rows):
+            self.table.setItem(i, 0, QTableWidgetItem(status))
+            self.table.setItem(i, 1, QTableWidgetItem(path))
+            self.table.setItem(i, 2, QTableWidgetItem(old_sz))
+            self.table.setItem(i, 3, QTableWidgetItem(new_sz))
+
+        self.setWindowTitle(
+            f"Compare Scans - {len(diff['added'])} added, "
+            f"{len(diff['removed'])} removed, {len(diff['changed'])} changed"
+        )
 
 
 class LoadWorker(QThread):
@@ -140,6 +227,7 @@ class MainWindow(QMainWindow):
         self.analyzer = Analyzer(self.db)
 
         self.current_scan_id: int | None = None
+        self.current_tree_data: DirStat | None = None
         self.tree_model: StorageTreeModel | None = None
         self.scan_worker: ScanWorker | None = None
         self.load_worker: LoadWorker | None = None
@@ -161,6 +249,10 @@ class MainWindow(QMainWindow):
         self.btn_history = QPushButton("History")
         self.btn_history.clicked.connect(self.on_history)
         controls_layout.addWidget(self.btn_history)
+
+        self.btn_compare = QPushButton("Compare")
+        self.btn_compare.clicked.connect(self.on_compare)
+        controls_layout.addWidget(self.btn_compare)
 
         self.lbl_status = QLabel("Ready")
         controls_layout.addWidget(self.lbl_status, stretch=1)
@@ -189,7 +281,19 @@ class MainWindow(QMainWindow):
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
             header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
-        main_layout.addWidget(self.tree_view)
+        # Splitter: tree view on top, treemap on bottom
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(self.tree_view)
+
+        self.treemap_widget = TreemapWidget()
+        splitter.addWidget(self.treemap_widget)
+        splitter.setSizes([500, 250])
+
+        main_layout.addWidget(splitter)
+
+    def on_compare(self) -> None:
+        dialog = DiffDialog(self.db, self)
+        dialog.exec()
 
     def on_history(self) -> None:
         dialog = HistoryDialog(self.db, self)
@@ -253,10 +357,13 @@ class MainWindow(QMainWindow):
         self.lbl_status.setText("Operation failed.")
 
     def update_tree_view(self, root_stat: DirStat) -> None:
+        self.current_tree_data = root_stat
         self.tree_model = StorageTreeModel(root_stat)
         self.tree_view.setModel(self.tree_model)
         # Expand just the root level initially
         self.tree_view.expandToDepth(0)
+        # Update treemap
+        self.treemap_widget.set_data(root_stat)
 
     def on_context_menu(self, position: Any) -> None:
         index = self.tree_view.indexAt(position)
