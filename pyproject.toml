@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 authors = [{ name = "Algieba-Dean", email = "algieba.king@gmail.com" }]
 license = "MIT"
 
-dependencies = ["pyside6>=6.10.2"]
+dependencies = ["pyside6>=6.11.0"]
 
 [project.scripts]
 pc-storage-history = "pc_storage_history.gui:main"
@@ -21,20 +21,20 @@ packages = ["src/pc_storage_history"]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.4",
-    "pytest-cov>=6.0.0",
-    "pytest-mock>=3.14.0",
-    "ruff>=0.8.0",
-    "pre-commit>=4.0.1",
-    "mypy>=1.18.2",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "ruff>=0.15.10",
+    "pre-commit>=4.5.1",
+    "mypy>=1.20.0",
 ]
 
 [project.optional-dependencies]
 # documentation
 docs = [
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.24",
-    "mkdocs-static-i18n>=1.2.0",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.3",
+    "mkdocs-static-i18n>=1.3.1",
 ]
 
 # ============================================================
