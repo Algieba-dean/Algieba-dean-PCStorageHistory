@@ -100,7 +100,7 @@ jobs:
 
       # 5. Upload Coverage to Codev
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -108,7 +108,7 @@ jobs:
 
       # 6. Upload Coverage HTML Report
       - name: Upload Coverage HTML Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           # Add matrix name to prevent overwriting artifacts from different jobs
